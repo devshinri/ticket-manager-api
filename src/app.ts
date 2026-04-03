@@ -1,4 +1,5 @@
 import express from "express";
+import { authRouter } from "./routes/auth.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { ticketRouter } from "./routes/ticket.routes.js";
 
@@ -10,5 +11,6 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ message: "ok" });
 });
 
+app.use(authRouter);
 app.use("/users", userRouter);
 app.use("/tickets", ticketRouter);

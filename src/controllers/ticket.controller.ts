@@ -79,19 +79,31 @@ export async function getTicketById(req: Request, res: Response) {
 
 export async function createTicket(req: Request, res: Response) {
   try {
-    const { title, content, authorId } = req.body as {
+    const { title, content } = req.body as {
       title?: string;
       content?: string;
-      authorId?: number;
     };
 
-    if (!title || !content || typeof authorId !== "number") {
+    const authUser = res.locals.user as { id: number; email: string } | undefined;
+
+    if (!title || !content) {
       return res.status(400).json({
-        message: "title, content and authorId are required",
+        message: "title and content are required",
       });
     }
 
-    const ticket = await ticketService.createTicket(title, content, authorId);
+    if (!authUser) {
+      return res.status(401).json({
+        message: "authentication required",
+      });
+    }
+
+    const ticket = await ticketService.createTicket(
+      title,
+      content,
+      authUser.id
+    );
+
     return res.status(201).json(ticket);
   } catch (error) {
     const serialized = serializeError(error);
@@ -112,10 +124,17 @@ export async function updateTicketStatus(req: Request, res: Response) {
 
     const id = parseId(rawId);
     const { status } = req.body as { status?: string };
+    const authUser = res.locals.user as { id: number; email: string } | undefined;
 
     if (!id) {
       return res.status(400).json({
         message: "valid ticket id is required",
+      });
+    }
+
+    if (!authUser) {
+      return res.status(401).json({
+        message: "authentication required",
       });
     }
 
@@ -135,6 +154,12 @@ export async function updateTicketStatus(req: Request, res: Response) {
     if (!existingTicket) {
       return res.status(404).json({
         message: "ticket not found",
+      });
+    }
+
+    if (existingTicket.author.id !== authUser.id) {
+      return res.status(403).json({
+        message: "forbidden",
       });
     }
 

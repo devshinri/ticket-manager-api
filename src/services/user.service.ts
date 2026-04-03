@@ -1,9 +1,7 @@
 import { prisma } from "../lib/prisma.js";
-import { createHash } from "node:crypto";
+import bcrypt from "bcryptjs";
 
-function hashPassword(password: string): string {
-  return createHash("sha256").update(password).digest("hex");
-}
+const SALT_ROUNDS = 10;
 
 export const userService = {
   async getUsers() {
@@ -19,11 +17,18 @@ export const userService = {
     });
   },
 
+  async findUserByEmail(email: string) {
+    return prisma.user.findUnique({
+      where: { email },
+    });
+  },
+
   async createUser(email: string, password: string) {
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     return prisma.user.create({
       data: {
         email,
-        passwordHash: hashPassword(password),
+        passwordHash
       },
       select: {
         id: true,
@@ -31,5 +36,8 @@ export const userService = {
         createdAt: true,
       },
     });
+  },
+  async verifyPassword(password: string, passwordHash: string) {
+    return bcrypt.compare(password, passwordHash);
   },
 };

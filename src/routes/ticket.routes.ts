@@ -5,10 +5,11 @@ import {
   getTickets,
   updateTicketStatus,
 } from "../controllers/ticket.controller.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 export const ticketRouter = Router();
 
 ticketRouter.get("/", getTickets);
 ticketRouter.get("/:id", getTicketById);
-ticketRouter.post("/", createTicket);
-ticketRouter.patch("/:id/status", updateTicketStatus);
+ticketRouter.post("/", requireAuth, createTicket);
+ticketRouter.patch("/:id/status", requireAuth, updateTicketStatus);
